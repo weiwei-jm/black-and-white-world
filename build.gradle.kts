@@ -1,9 +1,5 @@
-// 移除 pluginManagement 和 mixin 插件
-rootProject.name = "black-and-white-world" // 【注意】改成你仓库的名字
-
 plugins {
-    kotlin("jvm") version "1.9.22" // 根据你的 Kotlin 版本调整
-    // 不要写 org.spongepowered.mixin
+    kotlin("jvm") version "1.9.22" // 如果你原本是别的版本，保留你原本的即可
 }
 
 repositories {
@@ -12,10 +8,11 @@ repositories {
 }
 
 dependencies {
+    // 游戏依赖
     compileOnly("com.github.Anuken.Mindustry:core:v160")
     compileOnly("com.github.Anuken.Arc:arc-core:v160")
 
-    // 只保留普通依赖，不需要插件
+    // Mixin 依赖（不需要插件）
     compileOnly("org.spongepowered:mixin:0.8.5")
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
@@ -26,7 +23,7 @@ kotlin {
 
 tasks.withType<Jar> {
     archiveFileName.set("BlackWhiteMod.jar")
-    // 确保 mixins.blackwhite.json 被打进 jar 的根目录
+    // 确保 mixins.blackwhite.json 被打包进 jar
     from("src/main/resources") {
         include("mixins.blackwhite.json")
     }
