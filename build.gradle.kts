@@ -20,7 +20,7 @@ kotlin {
 }
 
 tasks.withType<Jar> {
-    archiveFileName.set("BlackWhiteMod.jar")
+    archiveFileName.set("black-and-white-world.jar")
 }
 
 tasks.register("deploy") {
