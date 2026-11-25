@@ -28,3 +28,10 @@ tasks.withType<Jar> {
         include("mixins.blackwhite.json")
     }
 }
+
+tasks.register("deploy") {
+    dependsOn("jar")
+    doLast {
+        println("Deploy task finished, jar is in build/libs/")
+    }
+}
