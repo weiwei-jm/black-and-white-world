@@ -20,12 +20,20 @@ kotlin {
 }
 
 tasks.withType<Jar> {
+    // 打出来的包名，和工作流里保持一致
     archiveFileName.set("black-and-white-world.jar")
+    
+    // 1. 把根目录的 mod.hjson 强行打包到 Jar 的根目录
+    from("mod.hjson") {
+        into("")
+    }
+    
+    // 2. 把根目录的 assets 文件夹强行打包进 Jar 的 assets 目录
+    from("assets") {
+        into("assets")
+    }
 }
 
 tasks.register("deploy") {
     dependsOn("jar")
-    doLast {
-        println("Deploy task finished, jar is in build/libs/")
-    }
 }
