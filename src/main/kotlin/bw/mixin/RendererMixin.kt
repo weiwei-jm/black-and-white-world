@@ -1,10 +1,11 @@
 package bw.mixin
 
 import arc.Core
-import arc.graphics.GL20
+import arc.graphics.Texture
 import arc.graphics.gl.Shader
 import arc.util.Log
 import mindustry.core.Renderer
+import mindustry.graphics.Shaders
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
@@ -32,26 +33,23 @@ class RendererMixin {
         }
     }
 
-    // 在游戏渲染的最后一步（即绘制完所有游戏内容），直接强行替换 Shader
+    // 注入点改为在原版 render() 方法尾部
     @Inject(method = ["draw"], at = [At("TAIL")], remap = false)
     fun onDrawTail(ci: CallbackInfo) {
         ensureInit()
         if (bwShader == null) return
 
-        // 直接绑定我们的灰度 Shader，并用原生的全屏绘制指令覆盖当前画面
-        bwShader!!.bind()
+        // 使用 Arc 自带的方法直接画全屏矩形
+        // 先重置投影矩阵到全屏坐标系，防止受摄像机位置影响
+        arc.graphics.g2d.Draw.proj(arc.Core.camera)
         
-        // 绘制一个全屏四边形
-        GL20.glBegin(GL20.GL_TRIANGLES)
-        GL20.glVertex2f(-1f, -1f)
-        GL20.glVertex2f(1f, -1f)
-        GL20.glVertex2f(1f, 1f)
-
-        GL20.glVertex2f(-1f, -1f)
-        GL20.glVertex2f(1f, 1f)
-        GL20.glVertex2f(-1f, 1f)
-        GL20.glEnd()
-
-        bwShader!!.unbind()
+        // 开启我们的 Shader
+        arc.graphics.g2d.Draw.shader(bwShader!!)
+        
+        // 画一个全屏矩形
+        arc.graphics.g2d.Draw.rect(0f, 0f, Core.graphics.width.toFloat(), Core.graphics.height.toFloat())
+        
+        // 恢复默认 Shader
+        arc.graphics.g2d.Draw.shader(Shaders.def)
     }
 }
