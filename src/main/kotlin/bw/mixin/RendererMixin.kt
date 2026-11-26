@@ -1,9 +1,9 @@
 package bw.mixin
 
 import arc.Core
-import arc.graphics.Color
-import arc.graphics.gl.FrameBuffer
+import arc.graphics.GL20
 import arc.graphics.gl.Shader
+import arc.util.Log
 import mindustry.core.Renderer
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
@@ -15,7 +15,6 @@ class RendererMixin {
 
     companion object {
         private var bwShader: Shader? = null
-        private var bwBuffer: FrameBuffer? = null
         private var initialized = false
 
         private fun ensureInit() {
@@ -26,19 +25,33 @@ class RendererMixin {
                     Core.files.internal("shaders/bw.vert").readString(),
                     Core.files.internal("shaders/bw.frag").readString()
                 )
+                Log.info("黑白着色器加载成功！")
             } catch (e: Exception) {
-                Core.app.post { arc.util.Log.err("黑白着色器加载失败: @", e.message) }
+                Log.err("黑白着色器加载失败: @", e.message)
             }
         }
+    }
 
-        fun applyBlackWhite() {
-            // 这里暂时留空，为了让 GitHub Actions 顺利编译通过。
-            // 等构建变绿后，我们再来这里写真正的画面变灰代码。
-        }
+    // 在游戏渲染的最后一步（即绘制完所有游戏内容），直接强行替换 Shader
+    @Inject(method = ["draw"], at = [At("TAIL")], remap = false)
+    fun onDrawTail(ci: CallbackInfo) {
+        ensureInit()
+        if (bwShader == null) return
 
-        @Inject(method = ["draw"], at = [At("HEAD")], remap = false)
-        fun onDrawHead(ci: CallbackInfo) {
-            ensureInit()
-        }
+        // 直接绑定我们的灰度 Shader，并用原生的全屏绘制指令覆盖当前画面
+        bwShader!!.bind()
+        
+        // 绘制一个全屏四边形
+        GL20.glBegin(GL20.GL_TRIANGLES)
+        GL20.glVertex2f(-1f, -1f)
+        GL20.glVertex2f(1f, -1f)
+        GL20.glVertex2f(1f, 1f)
+
+        GL20.glVertex2f(-1f, -1f)
+        GL20.glVertex2f(1f, 1f)
+        GL20.glVertex2f(-1f, 1f)
+        GL20.glEnd()
+
+        bwShader!!.unbind()
     }
 }
