@@ -1,6 +1,9 @@
 varying vec2 v_texCoords;
+uniform sampler2D u_texture;
 
 void main(){
-    // 暂时输出纯灰色 (R=0.5, G=0.5, B=0.5)
-    gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+    vec4 color = texture2D(u_texture, v_texCoords);
+    // 标准 RGB 转灰度公式
+    float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+    gl_FragColor = vec4(vec3(gray), color.a);
 }
