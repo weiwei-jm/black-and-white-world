@@ -1,4 +1,4 @@
-package bw.mixin
+/*package bw.mixin
 
 import arc.Core
 import arc.graphics.Color
@@ -72,3 +72,4 @@ class RendererMixin {
         Draw.proj(Core.camera)
     }
 }
+*/
