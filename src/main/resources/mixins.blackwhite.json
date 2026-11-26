@@ -1,4 +1,4 @@
-{
+/*{
   "required": true,
   "minVersion": "0.8",
   "package": "你的包名.mixin",
@@ -10,3 +10,4 @@
     "defaultRequire": 1
   }
 }
+*/
