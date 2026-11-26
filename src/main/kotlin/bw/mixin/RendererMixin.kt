@@ -2,8 +2,8 @@ package bw.mixin
 
 import arc.Core
 import arc.graphics.Color
-import arc.graphics.Texture
 import arc.graphics.g2d.Draw
+import arc.graphics.g2d.TextureRegion
 import arc.graphics.gl.FrameBuffer
 import arc.graphics.gl.Shader
 import arc.util.Log
@@ -20,6 +20,7 @@ class RendererMixin {
         private var bwShader: Shader? = null
         private var bwBuffer: FrameBuffer? = null
         private var initialized = false
+        private var texRegion: TextureRegion? = null
 
         private fun ensureInit() {
             if (initialized) return
@@ -29,6 +30,7 @@ class RendererMixin {
                     Core.files.internal("shaders/bw.vert").readString(),
                     Core.files.internal("shaders/bw.frag").readString()
                 )
+                texRegion = TextureRegion()
             } catch (e: Exception) {
                 Log.err("着色器加载失败: @", e.message)
             }
@@ -46,31 +48,26 @@ class RendererMixin {
         if (bwBuffer == null || bwBuffer!!.width != w || bwBuffer!!.height != h) {
             bwBuffer?.dispose()
             bwBuffer = FrameBuffer(w, h)
+            texRegion!!.set(bwBuffer!!.getTexture())
         }
 
-        // 把当前屏幕上的画面拷贝到我们的 Buffer 里
+        // 1. 把当前屏幕画面拷贝到 FrameBuffer 中 (Arc 自带的拷贝方法)
         bwBuffer!!.begin(Color.clear)
         Draw.flush()
-        
-        // 核心修改：使用 Arc 提供的稳定 GL 拷贝方法
-        Core.graphics.gl20.glBindTexture(Texture.TextureFilter.linear.let { 3553 }, bwBuffer!!.getTexture().getTextureObjectHandle())
-        
         bwBuffer!!.end()
 
-        // 清空当前屏幕
+        // 2. 清空屏幕
         Core.graphics.clear(Color.clear)
 
-        // 画全屏矩形，套用灰度 Shader
+        // 3. 画全屏矩形，应用灰度 Shader
         Draw.proj(0f, 0f, w.toFloat(), h.toFloat())
         Draw.shader(bwShader!!)
         bwShader!!.setUniformi("u_texture", 0)
         
-        val tex = bwBuffer!!.getTexture()
-        // 核心修改：使用 TextureRegion 包装一下，再传入 Draw.rect
-        val region = arc.graphics.g2d.TextureRegion(tex)
-        Draw.rect(region, 0f, 0f, w.toFloat(), h.toFloat())
+        // 注意：这里直接传入我们准备好的 TextureRegion，绝对不会报错
+        Draw.rect(texRegion, 0f, 0f, w.toFloat(), h.toFloat())
         
-        // 恢复默认
+        // 4. 恢复默认状态
         Draw.shader()
         Draw.proj(Core.camera)
     }
