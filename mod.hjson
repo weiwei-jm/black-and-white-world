@@ -1,9 +1,8 @@
 name: "black-and-white-world"
 displayName: "黑白画风"
 author: "weiwei-jm"
-description: "把Mindustry变成黑白画风的模组。"
+description: "把Mindustry变成黑白画风。"
 version: "1.0"
 minGameVersion: "160"
-
-# 这一行非常重要，告诉游戏加载我们的 Mixin
+main: "bw.BlackWhiteMod"  // 加上这一行，指定主类
 mixinConfigs: ["mixins.blackwhite.json"]
