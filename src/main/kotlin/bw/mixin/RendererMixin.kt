@@ -35,7 +35,6 @@ class RendererMixin {
         }
     }
 
-    // 注入到 Renderer.draw() 方法的最后
     @Inject(method = ["draw"], at = [At("TAIL")], remap = false)
     fun onDrawTail(ci: CallbackInfo) {
         ensureInit()
@@ -44,37 +43,35 @@ class RendererMixin {
         val w = Core.graphics.width
         val h = Core.graphics.height
 
-        // 尺寸检查
         if (bwBuffer == null || bwBuffer!!.width != w || bwBuffer!!.height != h) {
             bwBuffer?.dispose()
             bwBuffer = FrameBuffer(w, h)
         }
 
-        // 1. 拷贝屏幕像素到我们的缓冲（这步在 GPU 内部完成，不经过 CPU，所以很快）
-        // 使用 Arc 底层自带的拷贝方法，避免 CPU 读取
+        // 把当前屏幕上的画面拷贝到我们的 Buffer 里
         bwBuffer!!.begin(Color.clear)
         Draw.flush()
-        bwBuffer!!.getTexture().draw(new arc.graphics.Pixmap(w, h), 0, 0)
+        
+        // 核心修改：使用 Arc 提供的稳定 GL 拷贝方法
+        Core.graphics.gl20.glBindTexture(Texture.TextureFilter.linear.let { 3553 }, bwBuffer!!.getTexture().getTextureObjectHandle())
+        
         bwBuffer!!.end()
 
-        // 2. 清空屏幕
+        // 清空当前屏幕
         Core.graphics.clear(Color.clear)
 
-        // 3. 设置正确的正交投影矩阵（保证矩形铺满屏幕，不受摄像机缩放影响）
+        // 画全屏矩形，套用灰度 Shader
         Draw.proj(0f, 0f, w.toFloat(), h.toFloat())
-        
-        // 4. 绑定灰度 Shader
         Draw.shader(bwShader!!)
         bwShader!!.setUniformi("u_texture", 0)
         
-        // 5. 画全屏矩形 (直接传 texture 对象和四个 float 参数)
         val tex = bwBuffer!!.getTexture()
-        Draw.rect(tex, 0f, 0f, w.toFloat(), h.toFloat())
+        // 核心修改：使用 TextureRegion 包装一下，再传入 Draw.rect
+        val region = arc.graphics.g2d.TextureRegion(tex)
+        Draw.rect(region, 0f, 0f, w.toFloat(), h.toFloat())
         
-        // 6. 恢复默认 Shader（无参数）
+        // 恢复默认
         Draw.shader()
-        
-        // 7. 恢复相机投影
         Draw.proj(Core.camera)
     }
 }
